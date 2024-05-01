@@ -1,8 +1,8 @@
 {
   "name": "io.arfinity.unity.packages.sassimporter",
   "displayName": "arfinity - SassImporter",
-  "version": "1.1.1",
-  "unity": "2020.2",
+  "version": "1.1.2",
+  "unity": "2022.1",
   "description": "Sass Importer Library for Unity\n\nImports .scss files and makes them available for reference from .uxml files.",
   "keywords": [
     "unity",
@@ -12,7 +12,7 @@
     "utility"
   ],
   "license": "MIT",
-  "author": "arfinity GmbH (https://arfinity.io)",
+  "author": "McDev Games - arfinity GmbH (https://arfinity.io)",
   "devDependencies": {},
   "type": "library"
 }
