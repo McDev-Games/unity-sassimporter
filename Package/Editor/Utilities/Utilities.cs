@@ -31,7 +31,7 @@ namespace Arfinity.Libraries.Unity.Importers.SassImporter.Editor.Utilities
             Debug.Log("Using sass executable from io.arfinity.unity.packages.sassexecutables");
             _sassPath = Arfinity.Libraries.Unity.SassExecutables.Editor.SassExecutable.GetEmbeddedSassPath();
 #else
-            Debug.Log("Trying to use system sass executable if it exists on path.");
+            //Debug.Log("Trying to use system sass executable if it exists on path.");
             _sassPath = "sass";
 #endif
 

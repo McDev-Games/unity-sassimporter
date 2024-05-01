@@ -1,0 +1,6 @@
+.square {
+  height: $size;
+  width: $size;
+  margin: math.div($margin,2);
+  background-color: $blue;
+}

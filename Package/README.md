@@ -1,5 +1,8 @@
 # SassImporter for Unity 
 
+This is a forked repository. I added an AssetPostprocessor script to simply reimport all *.scss files in the project (unless they begin with an underscore "_").
+This helps the workflow when using @import as Unity will then catch the change and reimport the root *.scss files if a change to an imported file has been made.
+Before that you had to manually reimport the root file.
 ## Installation
 
 ### Using the git repo
