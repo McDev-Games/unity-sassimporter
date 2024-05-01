@@ -9,20 +9,29 @@ public class SCSSReimporter : AssetPostprocessor
 {
     private static Dictionary<string, List<string>> fileDependencies = new Dictionary<string, List<string>>();
 
+    static bool isForceImporting;
+
     private static void OnPostprocessAllAssets(
         string[] importedAssets,
         string[] deletedAssets,
         string[] movedAssets,
         string[] movedFromAssetPaths)
     {
-
         var importedSassFiles = importedAssets.Where(a => a.EndsWith(".scss")).ToArray();
 
         if (importedSassFiles.Length > 0)
         {
-            //This could be optimized by storing dependecy trees, but in fact the amount of root scss files will be low.
-            //The SASS importer will not import files that begin with "_" and hence we can define these as dependencies and not consider importing them in Unity.
-            ReimportAllSassFiles(importedSassFiles);
+            if (isForceImporting)
+            {
+                //We assume a second forced import attempt and not re-import all sass files. Reset flag.
+                isForceImporting = false;
+            }
+            else
+            {
+                //This could be optimized by storing dependecy trees, but in fact the amount of root scss files will be low.
+                //The SASS importer will not import files that begin with "_" and hence we can define these as dependencies and not consider importing them in Unity.
+                ReimportAllSassFiles(importedSassFiles);
+            }
         }
     }
 
@@ -32,11 +41,12 @@ public class SCSSReimporter : AssetPostprocessor
         string[] allScssFiles = Directory.GetFiles(assetsPath, "*.scss", SearchOption.AllDirectories);
         var cutoffLength = assetsPath.Remove(assetsPath.Length - "/Assets".Length + 1).Length;
 
-        var filteredScssFiles = allScssFiles            
+        var filteredScssFiles = allScssFiles
             .Where(s => !Path.GetFileName(s).StartsWith("_"))   //Filter imported files     
             .Select(s => s.Remove(0, cutoffLength)              //Get relative path
             .Replace('\\', '/'));                               //Unity-fy path
 
+        isForceImporting = true;
         foreach (string scssFile in filteredScssFiles)
         {
             //No douple import

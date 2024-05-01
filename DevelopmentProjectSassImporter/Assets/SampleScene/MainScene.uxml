@@ -1,14 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
-<engine:UXML
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:engine="UnityEngine.UIElements"
-    xmlns:editor="UnityEditor.UIElements"
-    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
->
-        <engine:Style src="../Styles/example.scss"/>
-
-    <engine:VisualElement style="width: 100%; height: 100%; background-color: white;">
-        <engine:Box class="square"/>
-    </engine:VisualElement>
-    
-</engine:UXML>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Styles/example.scss?fileID=7433441132597879392&amp;guid=d69567038984f4bd8bdc0fa1cdff09d6&amp;type=3#example" />
+    <Style src="project://database/Assets/Styles/example%202.scss?fileID=7433441132597879392&amp;guid=024c8baf85614bb4f88779888c55b121&amp;type=3#example 2" />
+    <ui:VisualElement style="width: 100%; height: 100%; background-color: white;">
+        <ui:Box class="square" />
+    </ui:VisualElement>
+</ui:UXML>
