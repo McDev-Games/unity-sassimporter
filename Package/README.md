@@ -12,15 +12,7 @@ Before that you had to manually reimport the root file.
 
 Add a git package in the Unity Package Manager with target:
 
-https://github.com/arfinity-io/unity-sassimporter.git?path=/Package#v1.1.1
-
-### Using openupm
-
-Add package with openupm-cli
-
-```
-npx openupm-cli add io.arfinity.unity.packages.sassimporter
-```
+https://github.com/McDev-Games/unity-sassimporter.git?path=/Package
 
 ## Usage
 
@@ -53,7 +45,7 @@ though this is said to be less performant.
 
 The importer reads SCSS files such that they can be referenced like USS files. Make sure that you only use USS-supported properties, units, and queries in the SCSS code.
 
-SCSS files starting with an underscore are ignored.
+SCSS files starting with an underscore are ignored. These can be used with @import.
 
 ## Optional Extras
 
