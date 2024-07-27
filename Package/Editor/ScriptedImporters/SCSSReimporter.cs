@@ -55,7 +55,8 @@ public class SCSSReimporter : AssetPostprocessor
                 AssetDatabase.ImportAsset(scssFile, ImportAssetOptions.Default);
             }
         }
-    }
+
+	}
 
     private static void CheckAndReimportDependencies(string changedFile)
     {

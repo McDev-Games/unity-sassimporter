@@ -14,95 +14,123 @@ using Debug = UnityEngine.Debug;
 
 namespace Arfinity.Libraries.Unity.Importers.SassImporter.Editor.ScriptedImporters
 {
-    /// <summary>
-    /// The main scripted importer. Imports files of type scss by pushing them to an external sass executable that is
-    /// optionally provided by the io.arfinity.unity.packages.sassexcutables package
-    /// </summary>
-    [ScriptedImporter(version: 13, exts: new []{"scss"}, importQueueOffset: 10)]
-    public class SassImporter : ScriptedImporter
-    {
-        public override void OnImportAsset(AssetImportContext ctx)
-        {
-            // Declare dependency on the detected sass version
-            ctx.DependsOnCustomDependency("io.arfinity.unity.packages.sassimporter/sass-version");
-            
-            // If the dependency on sass was not found don't try to import as it will fail anyway
-            if (!SassDependency.SassFound)
-            {
-                ctx.LogImportError($"No Sass available on path. Not importing: {ctx.assetPath}");
-                return;
-            }
-            
-            // If we don't have a path ignore
-            if(ctx.assetPath == null) return;
-            
-            // Only transpile scss files not starting with an underscore which is by convention a partial scss file
-            var fileName = Path.GetFileNameWithoutExtension(ctx.assetPath);
-            if (fileName.StartsWith("_")) return;
+	/// <summary>
+	/// The main scripted importer. Imports files of type scss by pushing them to an external sass executable that is
+	/// optionally provided by the io.arfinity.unity.packages.sassexcutables package
+	/// </summary>
+	[ScriptedImporter(version: 13, exts: new[] { "scss" }, importQueueOffset: 10)]
+	public class SassImporter : ScriptedImporter
+	{
+		private enum SaveMethod { WithinScssAsset, SeparateUssFile }
+		private const SaveMethod SaveAs = SaveMethod.WithinScssAsset;
+
+		public override void OnImportAsset(AssetImportContext ctx)
+		{
+			// Declare dependency on the detected sass version
+			ctx.DependsOnCustomDependency("io.arfinity.unity.packages.sassimporter/sass-version");
+
+			// If the dependency on sass was not found don't try to import as it will fail anyway
+			if (!SassDependency.SassFound)
+			{
+				ctx.LogImportError($"No Sass available on path. Not importing: {ctx.assetPath}");
+				return;
+			}
+
+			// If we don't have a path ignore
+			if (ctx.assetPath == null) return;
+
+			// Only transpile scss files not starting with an underscore which is by convention a partial scss file
+			var fileName = Path.GetFileNameWithoutExtension(ctx.assetPath);
+			if (fileName.StartsWith("_")) return;
 
 
-            var fullPath = Path.GetFullPath(ctx.assetPath);
+			var fullPath = Path.GetFullPath(ctx.assetPath);
 
-            // Prepare to start the external process
-            var processStartInfo = new ProcessStartInfo() {
-                FileName = Utilities.Utilities.GetSassPath(),
-                UseShellExecute = false,
-                RedirectStandardError = true,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                CreateNoWindow = true,
-                Arguments = $"\"{fullPath}\""
-            };
+			// Prepare to start the external process
+			var processStartInfo = new ProcessStartInfo()
+			{
+				FileName = Utilities.Utilities.GetSassPath(),
+				UseShellExecute = false,
+				RedirectStandardError = true,
+				RedirectStandardInput = true,
+				RedirectStandardOutput = true,
+				CreateNoWindow = true,
+				Arguments = $"\"{fullPath}\""
+			};
 
-            try
-            {
-                var process = Process.Start(processStartInfo);
+			try
+			{
+				var process = Process.Start(processStartInfo);
 
-                // Read (and empty) output buffer. Otherwise the process gets stuck and waits for its output to be read for
-                // large outputs
-                // https://stackoverflow.com/questions/439617/hanging-process-when-run-with-net-process-start-whats-wrong
-                string stdout = "";
-                while (process != null && !process.StandardOutput.EndOfStream)
-                {
-                    stdout += process.StandardOutput.ReadLine();
-                }
-                
-                process?.WaitForExit();
-                stdout += process?.StandardOutput.ReadToEnd();
+				// Read (and empty) output buffer. Otherwise the process gets stuck and waits for its output to be read for
+				// large outputs
+				// https://stackoverflow.com/questions/439617/hanging-process-when-run-with-net-process-start-whats-wrong
+				string stdout = "";
+				while (process != null && !process.StandardOutput.EndOfStream)
+				{
+					stdout += process.StandardOutput.ReadLine();
+				}
 
-                // This is some magic with reflection to access the internals of the UIToolkit package that imports uss
-                Type T = typeof(UnityEditor.UIElements.Toolbar).Assembly
-                    .GetType("UnityEditor.UIElements.StyleSheets.StyleSheetImporterImpl");
+				process?.WaitForExit();
+				stdout += process?.StandardOutput.ReadToEnd();
 
-                MethodInfo method = T.GetMethod("Import");
+				var stderr = process?.StandardError.ReadToEnd();
+				if (!string.IsNullOrEmpty(stderr))
+				{
+					Debug.LogError(stderr);
+				}
 
-                var styleSheet = ScriptableObject.CreateInstance<StyleSheet>();
-                if (method == null)
-                {
-                    Debug.LogError("Unable to get Unity-internal USS Import() method.");
-                    return;
-                }
+				process?.Close();
 
-                // Import the transpiled output as a uss file
-                method.Invoke(Activator.CreateInstance(T, new object[] { ctx }), new object[] { styleSheet, stdout });
+				switch (SaveAs)
+				{
+					case SaveMethod.WithinScssAsset:
+						SaveWithinAsset(ctx, stdout);
+						break;
+					case SaveMethod.SeparateUssFile:
+						SaveUSSFile(ctx.assetPath, stdout);
+						break;
+					default:
+						Debug.LogError($"Unknown Save Method {SaveAs}");
+						break;
+				}
+			}
+			catch (Win32Exception exception)
+			{
+				// On error log
+				ctx.LogImportError(exception.Message);
+			}
+		}
 
-                var stderr = process?.StandardError.ReadToEnd();
-                if (!string.IsNullOrEmpty(stderr))
-                {
-                    Debug.LogError(stderr);
-                }
+		private static void SaveWithinAsset(AssetImportContext ctx, string stdout)
+		{
+			var styleSheet = ScriptableObject.CreateInstance<StyleSheet>();
 
-                process?.Close();
+			// This is some magic with reflection to access the internals of the UIToolkit package that imports uss
+			Type T = typeof(UnityEditor.UIElements.Toolbar).Assembly
+				.GetType("UnityEditor.UIElements.StyleSheets.StyleSheetImporterImpl");
 
-                // Add the imported style as object and set as main
-                ctx.AddObjectToAsset("stylesheet", styleSheet);
-                ctx.SetMainObject(styleSheet);
-            }
-            catch (Win32Exception exception)
-            {
-                // On error log
-                ctx.LogImportError(exception.Message);
-            } 
-        }
-    }
+			MethodInfo method = T.GetMethod("Import");
+
+			if (method == null)
+			{
+				Debug.LogError("Unable to get Unity-internal USS Import() method.");
+				return;
+			}
+
+			// Import the transpiled output as a uss file
+			method.Invoke(Activator.CreateInstance(T, new object[] { ctx }), new object[] { styleSheet, stdout });
+			// Add the imported style as object and set as main
+			ctx.AddObjectToAsset("stylesheet", styleSheet);
+			ctx.SetMainObject(styleSheet);
+		}
+
+		private void SaveUSSFile(string assetPath, string style)
+		{
+			//Maybe not the ideal way, requires another reimport
+			var ussPath = Path.ChangeExtension(assetPath, ".uss");
+			File.WriteAllText(ussPath, style);
+			Debug.Log($"USS written: {ussPath}");
+		}
+	}
 }

@@ -57,7 +57,7 @@ namespace Arfinity.Libraries.Unity.Importers.SassImporter.Editor.ScriptedImporte
                 AssetDatabase.RegisterCustomDependency("io.arfinity.unity.packages.sassimporter/sass-version", Hash128.Compute(stdout));
                 SassFound = true;
             }
-            catch (Win32Exception exception)
+            catch (Win32Exception)
             {
                 Debug.LogError("Executable named sass not found on path");
                 SassFound = false;
